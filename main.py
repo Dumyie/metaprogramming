@@ -48,22 +48,39 @@ class RecordMeta(type):
         is to be used to create an object
 
         """
+
         list_attr = [x for x in dir(self) if not x.startswith('_')]
         if len(list_attr) > len(kwargs):
             raise TypeError('Missing attribute')
         if len(list_attr) < len(kwargs):
             raise TypeError('More attributes provided')
+        complete_attrib_list = self.get_all_attributes()
         for key, value in kwargs.items():
+            if complete_attrib_list[key] is not None:
+                if type(value) != complete_attrib_list[key]:
+                    raise TypeError("Invalid type for {0} has been passed".format(key))
             get_precondition = getattr(self, "__" + key + "__field").precondition
             if get_precondition is not None:
                 if not get_precondition(value):
                     raise TypeError('Precondition for ' + key + ' has been violated.')
         return super().__call__(*args, **kwargs)
 
+    def get_all_attributes(self):
+        """
+        This method collects all the attributes of an object including inherited attributes
+        """
+        complete_attrib_list = {}
+        list_of_objects = self.mro()
+        list_of_objects.reverse()
+        for i in range(2, len(list_of_objects)):
+            complete_attrib_list.update(list_of_objects[i].__annotations__)
+        return complete_attrib_list
+
     def __repr__(self):
         """
         This method prettifies the printing of objects.
         """
+        test = dir(self)
         val = str(self.__name__) + "(\n"
         for k, v in self.__dict__.items():
             if k.endswith("__field"):
@@ -82,7 +99,6 @@ class RecordMeta(type):
                     val += str(label) + "={" + placeholder + "}\n"
         val += ")"
         return val
-
 
 @dataclass
 class Field:
@@ -109,3 +125,4 @@ class Record(metaclass=RecordMeta):
         dict = self.__dict__
         pretty_object = str(self.__class__)
         return pretty_object.format(**dict)
+

@@ -61,6 +61,8 @@ class RecordTests(TestCase):
             Person(name="JAMES", age="150", income=24000.0)
         with self.assertRaises(TypeError):
             Person(name="JAMES", age="150", wealth=24000.0)
+        with self.assertRaises(TypeError):
+            Person(name=1, age=150, income=24000.0)
 
     def test_properties(self):
         james = Person(name="JAMES", age=34, income=24000.0)
